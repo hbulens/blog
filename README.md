@@ -1,3 +1,3 @@
 # Blog
 
-This repo contains all code to support my [blog posts](www.hendrikbulens.com)
+This repo contains all code to support my [blog posts](http://www.hendrikbulens.com)
