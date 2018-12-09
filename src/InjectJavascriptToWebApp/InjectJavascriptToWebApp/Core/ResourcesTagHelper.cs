@@ -11,11 +11,11 @@ namespace InjectJavascriptToWebApp
     [HtmlTargetElement("resources")]
     public class ResourcesTagHelper : TagHelper
     {
-        private readonly IStringLocalizerFactory _helper;
+        private readonly IStringLocalizerFactory _stringLocalizerFactory;
 
         public ResourcesTagHelper(IStringLocalizerFactory stringLocalizerFactory)
         {
-            _helper = stringLocalizerFactory;
+            _stringLocalizerFactory = stringLocalizerFactory;
         }
 
         [HtmlAttributeName("names")]
@@ -31,17 +31,15 @@ namespace InjectJavascriptToWebApp
             if (OnContentLoaded)
                 await base.ProcessAsync(context, output);
             else
-            {
-                StringBuilder sb = new StringBuilder();
-                ResourceJavaScriptService service = new ResourceJavaScriptService();
-
+            {                
                 IEnumerable<ResourceGroup> groupedResources = Resources.Select(x =>
                 {
-                    IStringLocalizer localizer = _helper.Create(x, Assembly.GetEntryAssembly().FullName);
+                    IStringLocalizer localizer = _stringLocalizerFactory.Create(x, Assembly.GetEntryAssembly().FullName);
                     return new ResourceGroup { Name = x, Entries = localizer.GetAllStrings(true).ToList() };
                 });
 
-                sb.Append(service.ToJavascript(groupedResources));
+                StringBuilder sb = new StringBuilder();
+                sb.Append(groupedResources.ToJavascript());
 
                 TagHelperContent content = await output.GetChildContentAsync();
                 sb.Append(content.GetContent());
