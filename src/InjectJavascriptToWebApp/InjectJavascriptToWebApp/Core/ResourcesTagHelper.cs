@@ -3,19 +3,23 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.Extensions.Localization;
-using InjectJavascriptToWebApp.Resources;
+using System.Linq;
+using System.Reflection;
 
 namespace InjectJavascriptToWebApp
 {
-    [HtmlTargetElement("script", Attributes = "prepend-resources")]
+    [HtmlTargetElement("resources")]
     public class ResourcesTagHelper : TagHelper
     {
-        private readonly ResourcesHelper _helper;
+        private readonly IStringLocalizerFactory _helper;
 
         public ResourcesTagHelper(IStringLocalizerFactory stringLocalizerFactory)
         {
-            _helper = new ResourcesHelper(stringLocalizerFactory);
+            _helper = stringLocalizerFactory;
         }
+
+        [HtmlAttributeName("names")]
+        public string[] Resources { get; set; }
 
         /// <summary>
         /// Execute script only once document is loaded.
@@ -28,17 +32,21 @@ namespace InjectJavascriptToWebApp
                 await base.ProcessAsync(context, output);
             else
             {
-                ResourceGroup labels = new ResourceGroup { Name = "Labels", Entries = _helper.GetResources(nameof(Labels)) };
-
                 StringBuilder sb = new StringBuilder();
                 ResourceJavaScriptService service = new ResourceJavaScriptService();
-                sb.Append(service.ToJavascript(new List<ResourceGroup> { labels, /* Add as many resource files as you need to */ }));
+
+                IEnumerable<ResourceGroup> groupedResources = Resources.Select(x =>
+                {
+                    IStringLocalizer localizer = _helper.Create(x, Assembly.GetEntryAssembly().FullName);
+                    return new ResourceGroup { Name = x, Entries = localizer.GetAllStrings(true).ToList() };
+                });
+
+                sb.Append(service.ToJavascript(groupedResources));
 
                 TagHelperContent content = await output.GetChildContentAsync();
-                string javascript = content.GetContent();
-                sb.Append(javascript);
-                sb.Append(";");
+                sb.Append(content.GetContent());
 
+                output.TagName = "script";
                 output.Content.AppendHtml(sb.ToString());
             }
         }
