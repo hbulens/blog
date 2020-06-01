@@ -15,10 +15,11 @@ steps:
 - script: |
     yarn install
     yarn build 
+  workingDirectory: src/static-site-azure-app-service
   displayName: 'yarn install and build'
 - task: CopyFiles@2
   inputs:
-    SourceFolder: 'src/build'
+    SourceFolder: 'src/static-site-azure-app-service/build'
     Contents: '**'
     TargetFolder: '$(build.artifactstagingdirectory)'
     CleanTargetFolder: true
