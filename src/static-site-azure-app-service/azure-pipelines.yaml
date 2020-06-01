@@ -1,0 +1,33 @@
+# Node.js
+
+trigger:
+  - master
+  
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '12.x'
+  displayName: 'Install Node.js'
+
+- script: |
+    yarn install
+    yarn build 
+  displayName: 'yarn install and build'
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'src/build'
+    Contents: '**'
+    TargetFolder: '$(build.artifactstagingdirectory)'
+    CleanTargetFolder: true
+    OverWrite: true
+  displayName: 'Copy output files'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+  displayName: 'Publish output files'
